@@ -39,7 +39,7 @@ class AuthManager:
         cls,
         credentials: HTTPAuthorizationCredentials = Depends(security),
         session: AsyncSession = Depends(db_helper.scoped_session_dependency)
-    ):
+    ) -> User:
         token = credentials.credentials
         try:
             payload = jwt.decode(token, cls.secret_key, algorithms=[cls.algorithm])
@@ -54,6 +54,7 @@ class AuthManager:
             student = result.scalar_one_or_none()
             if not student:
                 raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+            return student
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
         except jwt.InvalidTokenError:
