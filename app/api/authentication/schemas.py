@@ -13,7 +13,7 @@ class RegisterSchema(EmailSchema):
 
     @field_validator("password")
     def validate_password(cls, v):
-        if len(v) > 6:
+        if len(v) < 6:
             raise ValueError("Password must be at least 6 characters")
         return v
 
