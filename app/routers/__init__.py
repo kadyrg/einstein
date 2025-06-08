@@ -14,6 +14,7 @@ api = FastAPI(
     description=api_description
 )
 
+
 admin_description = """
     Einstein Admin
 """
