@@ -1,11 +1,10 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-import uvicorn
 from contextlib import asynccontextmanager
 
-from db import db_helper
-from models import Base
-from api import router as api_router
+from app.db import db_helper
+from app.models import Base
+from .routers import api, admin
 
 
 @asynccontextmanager
@@ -17,9 +16,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="Einstein",
-    version="1.0.0",
-    description="Einstein online AI tutor"
+    docs_url=None,
 )
 
 
@@ -32,8 +29,5 @@ app.add_middleware(
 )
 
 
-app.include_router(api_router)
-
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
+app.mount("/api", api)
+app.mount("/admin", admin)

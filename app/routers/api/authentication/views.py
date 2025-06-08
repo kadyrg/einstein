@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import EmailSchema, RegisterSchema, TokenSchema, VerifySchema, LoginSchema
-from db import db_helper
+from app.db import db_helper
 from . import crud
 
 

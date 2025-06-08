@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import NameSchema
-from models import User
+from app.models import User
 
 
 async def update_name(name_in: NameSchema, user: User, session: AsyncSession) -> NameSchema:
@@ -9,5 +9,5 @@ async def update_name(name_in: NameSchema, user: User, session: AsyncSession) ->
     user.last_name = name_in.last_name
 
     await session.commit()
-    
+
     return name_in

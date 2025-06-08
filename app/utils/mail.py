@@ -2,37 +2,43 @@ import smtplib
 from email.message import EmailMessage
 from fastapi import HTTPException
 
-from core import settings
+from app.core import settings
 
 
 class MailManager:
-    email = settings.EMAIL_USER
-    host = settings.EMAIL_HOST
-    port = settings.EMAIL_PORT
-    password = settings.EMAIL_PASS
+    def __init__(self, email, host, port, password):
+        self.email = email
+        self.host = host
+        self.port = port
+        self.password = password
 
 
-    @classmethod
-    def send_mail(cls, to: str, code: str):
+    def send_mail(self, to: str, code: str):
         subject = "Verification code"
         body = f"Your verification code is {code}"
         
         msg = EmailMessage()
         
         msg["Subject"] = subject
-        msg["From"] = cls.email
+        msg["From"] = self.email
         msg["To"] = to
         msg.set_content(body)
 
         try:
-            with smtplib.SMTP(cls.host, int(cls.port)) as server:
+            with smtplib.SMTP(self.host, int(self.port)) as server:
                 server.ehlo()
                 server.starttls()
                 server.ehlo()
-                server.login(cls.email, cls.password)
+                server.login(self.email, self.password)
                 server.send_message(msg)
+
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Verification code couldn't be sent. {e}")
 
 
-mail_manager = MailManager()
+mail_manager = MailManager(
+    email = settings.EMAIL_USER,
+    host = settings.EMAIL_HOST,
+    port = settings.EMAIL_PORT,
+    password = settings.EMAIL_PASS
+)

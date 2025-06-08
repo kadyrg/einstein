@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import MeSchema, NameSchema
-from models import User
-from auth import auth_manager
+from app.models import User
+from app.utils import auth_manager
 from . import crud
-from db import db_helper
+from app.db import db_helper
 
 
 router = APIRouter(

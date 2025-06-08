@@ -4,11 +4,9 @@ from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
 
 from .schemas import EmailSchema, RegisterSchema, TokenSchema, VerifySchema, LoginSchema
-from models import User, OTP
-from auth import password_manager, auth_manager
-from utils.security import generate_otp_code
-from utils import mail_manager
-from core import settings
+from app.models import User, OTP
+from app.utils import mail_manager, password_manager, auth_manager, generate_otp_code
+from app.core import settings
 
 
 async def register(register_in: RegisterSchema, session: AsyncSession) -> EmailSchema:
