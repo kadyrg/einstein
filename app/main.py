@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.db import db_helper
-from app.models import Base, User
+from app.models import Base
 from .routers import api, admin
 
 
