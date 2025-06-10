@@ -1,17 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import selectinload
-from uuid import uuid4
+import os
 
-from .schemas import CreateCourseSchema, ListCourseSchema, ReadCourseSchema, CreateChapterSchema, ReadChapterSchema, \
-    UpdateCourseSchema
+from .schemas import CourseSchema, CreateCourseSchema, course_schema, CreateChapterSchema, ReadChapterSchema
 from app.models import Course, Chapter
-from app.utils import course_image_manager
+from app.utils import course_image_manager, courses_media_path_manager
 
 
-async def create_course(course_in: CreateCourseSchema, image: UploadFile, session: AsyncSession) -> CreateCourseSchema:
+async def create_course(course_in: CreateCourseSchema, image: UploadFile, request: Request, session: AsyncSession) -> CourseSchema:
     course_result = await session.execute(
         select(Course).where(
             Course.title == course_in.title,
@@ -23,32 +22,34 @@ async def create_course(course_in: CreateCourseSchema, image: UploadFile, sessio
     if course:
         raise HTTPException(status_code=400, detail="Course already exists")
 
-    image_path = await course_image_manager.upload_file(image, "courses")
+    image_path = await course_image_manager.upload(image)
 
-    course = Course(**course_in.model_dump(), image_path=image_path)
+    course = Course(
+        title=course_in.title,
+        image_path=image_path,
+    )
 
     session.add(course)
-
     await session.commit()
 
-    return course_in
+    return course_schema(course, request)
 
 
-async def get_courses(session: AsyncSession) -> list[ListCourseSchema]:
+async def get_courses(request: Request, session: AsyncSession) -> list[CourseSchema]:
     result = await session.execute(
         select(Course).order_by(-Course.id)
     )
 
     courses = result.scalars().all()
 
-    return [ListCourseSchema.model_validate(course) for course in courses]
+    return [course_schema(course, request) for course in courses]
 
 
-async def read_course(course_id: int, session: AsyncSession) -> ReadCourseSchema:
+async def read_course(course_id: int, request: Request, session: AsyncSession) -> CourseSchema:
     result = await session.execute(
         select(Course)
-        .options(selectinload(Course.chapters))
         .where(Course.id == course_id)
+        .options(selectinload(Course.chapters))
     )
 
     course = result.scalar_one_or_none()
@@ -56,12 +57,10 @@ async def read_course(course_id: int, session: AsyncSession) -> ReadCourseSchema
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    image = course_image_manager.get_image(course.image_path).bod
-
-    return ReadCourseSchema.model_validate(course)
+    return course_schema(course, request)
 
 
-async def update_course(course_id: int, course_in: UpdateCourseSchema, session: AsyncSession):
+async def update_course(course_id: int, course_title: str, image: UploadFile | None, request: Request, session: AsyncSession) -> CourseSchema:
     course_result = await session.execute(
         select(Course).where(Course.id == course_id)
     )
@@ -71,12 +70,20 @@ async def update_course(course_id: int, course_in: UpdateCourseSchema, session: 
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    for field, value in course_in.model_dump(exclude_unset=True).items():
-        setattr(course, field, value)
+    if course_title:
+        course.title = course_title
+
+    if image:
+        old_image = course.image_path
+        old_image_path = courses_media_path_manager.local_file_path(old_image)
+        if old_image_path.exists():
+            os.remove(old_image_path)
+        image = await course_image_manager.upload(image)
+        course.image_path = image
 
     await session.commit()
 
-    return course
+    return course_schema(course, request)
 
 
 async def delete_course(course_id: int, session: AsyncSession):
@@ -89,6 +96,9 @@ async def delete_course(course_id: int, session: AsyncSession):
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    image_path = courses_media_path_manager.local_file_path(course.image_path)
+    if image_path.exists():
+        os.remove(image_path)
     await session.delete(course)
     await session.commit()
 

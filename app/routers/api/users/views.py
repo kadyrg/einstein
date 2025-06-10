@@ -5,7 +5,7 @@ from .schemas import MeSchema, NameSchema
 from app.models import User
 from app.utils import auth_manager
 from . import crud
-from app.db import db_helper
+from app.db import database
 
 
 router = APIRouter(
@@ -35,6 +35,6 @@ def get_me(
 async def update_name(
     name_in: NameSchema,
     user: User = Depends(auth_manager.student_auth),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.update_name(name_in, user, session)

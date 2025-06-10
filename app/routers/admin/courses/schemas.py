@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Annotated
+from fastapi import Request
+
+from pydantic import BaseModel, Field
 from fastapi import Form
+from app.utils import courses_media_path_manager
+from app.models import Course
 
 
 class CreateCourseSchema(BaseModel):
@@ -14,15 +17,31 @@ class CreateCourseSchema(BaseModel):
         return cls(title=title)
 
 
-class UpdateCourseSchema(CreateCourseSchema):
-    title: Annotated[str | None, Field(min_length=1, max_length=50)] = None
-    image_path: str | None = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ListCourseSchema(CreateCourseSchema):
+class CourseSchema(BaseModel):
     id: int
+    title: str
+    image: str
+
+def course_schema(course: Course, request: Request) -> CourseSchema:
+    image = courses_media_path_manager.file_path(request, course.image_path)
+
+    return CourseSchema(
+        id=course.id,
+        title=course.title,
+        image=image
+    )
+
+
+class UpdateCourseSchema(BaseModel):
+    title: str | None = Field(default=None, max_length=50, min_length=1)
+
+    @classmethod
+    def as_form(
+            cls,
+            title: str = Form(None),
+    ):
+        return cls(title=title)
+
 
 
 class CreateChapterSchema(CreateCourseSchema):

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 
 from app.core import settings
-from app.db import db_helper
+from app.db import database
 from app.models import User
 
 
@@ -25,7 +25,6 @@ class AuthManager:
         self.algorithm = algorithm
         self.token_validity = token_validity
 
-
     def generate_token(self, user_id: int) -> str:
         expiration_date = datetime.now(timezone.utc) + timedelta(days=settings.TOKEN_VALIDITY)
         payload = {
@@ -39,11 +38,10 @@ class AuthManager:
         )
         return token
 
-
     async def student_auth(
         self,
         credentials: HTTPAuthorizationCredentials = Depends(security),
-        session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+        session: AsyncSession = Depends(database.scoped_session_dependency)
     ) -> User:
         token = credentials.credentials
         try:
@@ -56,25 +54,19 @@ class AuthManager:
                     User.is_active==True
                 )
             )
-
             student = result.scalar_one_or_none()
-
             if student is None:
                 raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
             return student
-
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
-
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
 
     async def admin_auth(
         self,
         credentials: HTTPAuthorizationCredentials = Depends(security),
-        session: AsyncSession = Depends(db_helper.get_scoped_session),
+        session: AsyncSession = Depends(database.get_scoped_session),
     ) -> User:
         try:
             token = credentials.credentials
@@ -88,17 +80,15 @@ class AuthManager:
                 )
             )
             admin = result.scalar_one_or_none()
-
             if admin is None:
                 raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
             return admin
-
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
-
         except jwt.InvalidTokenError:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+auth_manager = AuthManager(settings.SECRET_KEY, settings.ALGORITHM, settings.TOKEN_VALIDITY)
 
 
 class PasswordManager:
@@ -110,13 +100,5 @@ class PasswordManager:
 
     def verify_password(self, plain_password, hashed_password) -> bool:
         return self.pwd_context.verify(plain_password, hashed_password)
-
-
-auth_manager = AuthManager(
-    secret_key = settings.SECRET_KEY,
-    algorithm = settings.ALGORITHM,
-    token_validity = settings.TOKEN_VALIDITY
-)
-
 
 password_manager = PasswordManager()

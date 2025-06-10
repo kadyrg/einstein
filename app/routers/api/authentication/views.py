@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import EmailSchema, RegisterSchema, TokenSchema, VerifySchema, LoginSchema
-from app.db import db_helper
+from app.db import database
 from . import crud
 
 
@@ -20,7 +20,7 @@ router = APIRouter(
 )
 async def register(
     register_in: RegisterSchema,
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.register(register_in, session)
 
@@ -33,7 +33,7 @@ async def register(
 )
 async def verify(
     verify_in: VerifySchema,
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.verify(verify_in, session)
 
@@ -46,6 +46,6 @@ async def verify(
 )
 async def login(
     login_in: LoginSchema,
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.login(login_in, session)

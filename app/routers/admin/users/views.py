@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from . import crud
-from app.db import db_helper
+from app.db import database
 from .schemas import CreateUserSchema, MeSchema, GetUsersSchema, CreateStudentSchema, StudentSchema
 from app.utils import auth_manager
 from app.models import User
@@ -23,7 +23,7 @@ router = APIRouter(
 async def create_user(
     user_in: CreateUserSchema,
     user: User = Depends(auth_manager.admin_auth),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.create_user(user_in, session)
 
@@ -36,7 +36,7 @@ async def create_user(
 async def get_users(
     page: Annotated[int, Query(ge=1, description="Page")] = 1,
     user: User = Depends(auth_manager.admin_auth),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.get_users(session, page)
 
@@ -49,7 +49,7 @@ async def get_users(
 async def create_student(
     student_in: CreateStudentSchema,
     user: User = Depends(auth_manager.admin_auth),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.create_student(student_in, session)
 
