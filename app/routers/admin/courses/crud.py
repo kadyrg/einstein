@@ -3,11 +3,11 @@ from sqlalchemy import select
 from fastapi import HTTPException, UploadFile, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import selectinload
-import os
 
-from .schemas import CourseSchema, CreateCourseSchema, course_schema, CreateChapterSchema, ReadChapterSchema
+from .schemas import CourseSchema, CreateCourseSchema, course_schema, read_course_schema, CreateChapterSchema, \
+    chapter_schema, ChapterSchema, UpdateChapterSchema
 from app.models import Course, Chapter
-from app.utils import course_image_manager, courses_media_path_manager
+from app.utils import course_image_manager, courses_media_path_manager, chapter_video_manager
 
 
 async def create_course(course_in: CreateCourseSchema, image: UploadFile, request: Request, session: AsyncSession) -> CourseSchema:
@@ -57,7 +57,7 @@ async def read_course(course_id: int, request: Request, session: AsyncSession) -
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    return course_schema(course, request)
+    return read_course_schema(course, course.chapters, request)
 
 
 async def update_course(course_id: int, course_title: str, image: UploadFile | None, request: Request, session: AsyncSession) -> CourseSchema:
@@ -74,12 +74,8 @@ async def update_course(course_id: int, course_title: str, image: UploadFile | N
         course.title = course_title
 
     if image:
-        old_image = course.image_path
-        old_image_path = courses_media_path_manager.local_file_path(old_image)
-        if old_image_path.exists():
-            os.remove(old_image_path)
-        image = await course_image_manager.upload(image)
-        course.image_path = image
+        course_image_manager.delete(course.image_path)
+        course.image_path = await course_image_manager.upload(image)
 
     await session.commit()
 
@@ -88,7 +84,9 @@ async def update_course(course_id: int, course_title: str, image: UploadFile | N
 
 async def delete_course(course_id: int, session: AsyncSession):
     course_result = await session.execute(
-        select(Course).where(Course.id == course_id)
+        select(Course)
+        .where(Course.id == course_id)
+        .options(selectinload(Course.chapters))
     )
 
     course = course_result.scalar_one_or_none()
@@ -96,16 +94,18 @@ async def delete_course(course_id: int, session: AsyncSession):
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    image_path = courses_media_path_manager.local_file_path(course.image_path)
-    if image_path.exists():
-        os.remove(image_path)
+    for chapter in course.chapters:
+        chapter_video_manager.delete(chapter.video_path)
+
+    course_image_manager.delete(course.image_path)
+
     await session.delete(course)
     await session.commit()
 
     return Response(status_code=204)
 
 
-async def create_chapter(course_id: int, chapter_in: CreateChapterSchema, session: AsyncSession) -> CreateChapterSchema:
+async def create_chapter(course_id: int, chapter_in: CreateChapterSchema, request, video: UploadFile, session: AsyncSession) -> ChapterSchema:
     course_result = await session.execute(
         select(Course).where(Course.id == course_id)
     )
@@ -115,17 +115,21 @@ async def create_chapter(course_id: int, chapter_in: CreateChapterSchema, sessio
     if course is None:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    chapter = Chapter(course_id=course_id, **chapter_in.model_dump())
+    video = await chapter_video_manager.upload(video)
+
+    chapter = Chapter(
+        title=chapter_in.title,
+        video_path=video,
+        course_id=course_id
+    )
 
     session.add(chapter)
-
     await session.commit()
 
-    return chapter_in
+    return chapter_schema(chapter, request)
 
 
-async def read_chapter(course_id: int, chapter_id: int, session: AsyncSession) -> ReadChapterSchema:
-
+async def read_chapter(course_id: int, chapter_id: int, request: Request, session: AsyncSession) -> ChapterSchema:
     chapter_result = await session.execute(
         select(Chapter).where(
             Chapter.id == chapter_id,
@@ -138,7 +142,32 @@ async def read_chapter(course_id: int, chapter_id: int, session: AsyncSession) -
     if chapter is None:
         raise HTTPException(status_code=404, detail="Chapter not found")
 
-    return ReadChapterSchema.model_validate(chapter)
+    return chapter_schema(chapter, request)
+
+
+async def update_chapter(course_id: int, chapter_id: int, chapter_in: UpdateChapterSchema, video: UploadFile | None, request: Request, session: AsyncSession) -> ChapterSchema:
+    result = await session.execute(
+        select(Chapter).where(
+            Chapter.course_id == course_id,
+            Chapter.id == chapter_id,
+        )
+    )
+
+    chapter = result.scalar_one_or_none()
+
+    if chapter is None:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    for field, value in chapter_in.model_dump().items():
+        setattr(chapter, field, value)
+
+    if video:
+        chapter_video_manager.delete(chapter.video_path)
+        chapter.video_path = await chapter_video_manager.upload(video)
+
+    await session.commit()
+
+    return chapter_schema(chapter, request)
 
 
 async def delete_chapter(course_id: int, chapter_id: int, session: AsyncSession):
@@ -153,6 +182,8 @@ async def delete_chapter(course_id: int, chapter_id: int, session: AsyncSession)
 
     if chapter is None:
         raise HTTPException(status_code=404, detail="Chapter not found")
+
+    chapter_video_manager.delete(chapter.video_path)
 
     await session.delete(chapter)
     await session.commit()

@@ -20,6 +20,6 @@ class MediaPathManager:
     def file_path(self, request: Request, filename: str) -> str:
         return f"{request.base_url}media/{self.folder}/{filename}"
 
-courses_media_path_manager = MediaPathManager(
-    folder="courses",
-)
+courses_media_path_manager = MediaPathManager("courses")
+
+chapters_media_path_manager = MediaPathManager("chapters")

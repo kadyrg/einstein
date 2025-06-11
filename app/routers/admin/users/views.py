@@ -4,62 +4,75 @@ from typing import Annotated
 
 from . import crud
 from app.db import database
-from .schemas import CreateUserSchema, MeSchema, GetUsersSchema, CreateStudentSchema, StudentSchema
+from .schemas import UserSchema, CreateUserSchema, GetUsersSchema
 from app.utils import auth_manager
 from app.models import User
 
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users"]
+    prefix="/users"
 )
 
 
 @router.post(
-    path="",
-    summary="Create user",
-    response_model=CreateUserSchema,
+    path="/admins",
+    tags=["Admins"],
+    summary="Create admin",
+    response_model=UserSchema,
 )
-async def create_user(
-    user_in: CreateUserSchema,
-    user: User = Depends(auth_manager.admin_auth),
+async def create_admin(
+    admin_in: CreateUserSchema,
     session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
-    return await crud.create_user(user_in, session)
+    return await crud.create_admin(admin_in, session)
 
 
 @router.get(
-    path="",
-    summary="Get users",
+    path="/admins",
+    tags=["Admins"],
+    summary="Get admins",
     response_model=GetUsersSchema,
 )
-async def get_users(
+async def get_admins(
     page: Annotated[int, Query(ge=1, description="Page")] = 1,
-    user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
-    return await crud.get_users(session, page)
+    return await crud.get_admins(session, page)
 
 
 @router.post(
     path="/students",
+    tags=["Students"],
     summary="Create student",
-    response_model=StudentSchema,
+    response_model=UserSchema,
 )
 async def create_student(
-    student_in: CreateStudentSchema,
-    user: User = Depends(auth_manager.admin_auth),
+    student_in: CreateUserSchema,
     session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.create_student(student_in, session)
 
 
 @router.get(
+    path="/students",
+    tags=["Students"],
+    summary="Get students",
+    response_model=GetUsersSchema,
+)
+async def get_admins(
+    page: Annotated[int, Query(ge=1, description="Page")] = 1,
+    session: AsyncSession = Depends(database.scoped_session_dependency)
+):
+    return await crud.get_students(session, page)
+
+
+@router.get(
     path="/me",
+    tags=["Users"],
     summary="Get your data",
-    response_model=MeSchema,
+    response_model=UserSchema,
 )
 def get_me(
     user: User = Depends(auth_manager.admin_auth),
 ):
-    return MeSchema.model_validate(user)
+    return UserSchema.model_validate(user)

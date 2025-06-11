@@ -2,59 +2,59 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException
 
-from .schemas import CreateUserSchema, GetUsersSchema, ListUsersSchema, CreateStudentSchema, StudentSchema
+from .schemas import UserSchema, CreateUserSchema, GetUsersSchema
 from app.models import User, UserType
 from app.utils import password_manager
 
 
-async def create_user(user_in: CreateUserSchema, session: AsyncSession) -> CreateUserSchema:
+async def create_admin(admin_in: CreateUserSchema, session: AsyncSession) -> UserSchema:
     result = await session.execute(
         select(User).where(
-            User.email == user_in.email
+            User.email == admin_in.email
         )
     )
 
-    user = result.scalar_one_or_none()
+    admin = result.scalar_one_or_none()
 
-    if user:
+    if admin:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    password = password_manager.hash_password(user_in.password)
+    password = password_manager.hash_password(admin_in.password)
 
-    user = User(
-        email=str(user_in.email),
-        first_name=user_in.first_name,
-        last_name=user_in.last_name,
+    admin = User(
+        email=str(admin_in.email),
+        first_name=admin_in.first_name,
+        last_name=admin_in.last_name,
         password=password,
         is_active=True,
         type=UserType.admin
     )
 
-    session.add(user)
+    session.add(admin)
     await session.commit()
 
-    return user_in
+    return UserSchema.model_validate(admin)
 
 
-async def get_users(session: AsyncSession, page: int = 1) -> GetUsersSchema:
+async def get_admins(session: AsyncSession, page: int = 1) -> GetUsersSchema:
     limit = 10
     offset = (page - 1) * limit
 
     total_result = await session.execute(
-        select(func.count()).select_from(User).where(User.type==UserType.student)
+        select(func.count()).select_from(User).where(User.type==UserType.admin)
     )
 
     total = total_result.scalar_one() or 0
 
     result = await session.execute(
         select(User)
-        .where(User.type == UserType.student)
+        .where(User.type == UserType.admin)
         .order_by(-User.id)
         .offset(offset)
         .limit(limit)
     )
 
-    users = result.scalars().all()
+    admins = result.scalars().all()
 
     pages = (total + limit - 1) // limit
 
@@ -62,11 +62,11 @@ async def get_users(session: AsyncSession, page: int = 1) -> GetUsersSchema:
         total = total,
         pages = pages,
         limit = limit,
-        users = [ListUsersSchema.model_validate(user) for user in users]
+        results = [UserSchema.model_validate(admin) for admin in admins]
     )
 
 
-async def create_student(student_in: CreateStudentSchema, session: AsyncSession) -> StudentSchema:
+async def create_student(student_in: CreateUserSchema, session: AsyncSession) -> UserSchema:
     result = await session.execute(
         select(User).where(User.email == student_in.email)
     )
@@ -87,4 +87,36 @@ async def create_student(student_in: CreateStudentSchema, session: AsyncSession)
 
     session.add(student)
     await session.commit()
-    return StudentSchema.model_validate(student)
+    return UserSchema.model_validate(student)
+
+
+async def get_students(session: AsyncSession, page: int = 1) -> GetUsersSchema:
+    limit = 10
+    offset = (page - 1) * limit
+
+    total_result = await session.execute(
+        select(func.count()).select_from(User).where(User.type==UserType.student)
+    )
+
+    total = total_result.scalar_one() or 0
+
+    result = await session.execute(
+        select(User)
+        .where(User.type == UserType.student)
+        .order_by(-User.id)
+        .offset(offset)
+        .limit(limit)
+    )
+
+    students = result.scalars().all()
+
+    pages = (total + limit - 1) // limit
+
+    return GetUsersSchema(
+        total = total,
+        pages = pages,
+        limit = limit,
+        results = [UserSchema.model_validate(student) for student in students]
+    )
+
+
