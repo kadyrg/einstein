@@ -15,30 +15,23 @@ async def register(register_in: RegisterSchema, session: AsyncSession) -> EmailS
             User.email==register_in.email
         )
     )
-
     user = user_result.scalar_one_or_none()
-
     if user and user.is_active:
         raise HTTPException(status_code=400, detail=f"User with {register_in.email} email already exists")
-
     password = password_manager.hash_password(register_in.password)
-
-    if not user:
+    if user is None:
         user = User(
-            email=register_in.email,
+            email=str(register_in.email),
             first_name=register_in.first_name,
             last_name=register_in.last_name,
             password=password
         )
         session.add(user)
-
     if user:
         user.first_name=register_in.first_name
         user.last_name=register_in.last_name
         user.password=password
-    
     code = generate_otp_code()
-    
     otp_result = await session.execute(
         select(OTP).where(
             OTP.email==register_in.email,
@@ -46,27 +39,18 @@ async def register(register_in: RegisterSchema, session: AsyncSession) -> EmailS
             OTP.is_used==False
         )
     )
-
     valid_otp = otp_result.scalar_one_or_none()
-
     if valid_otp:
-        session.delete(valid_otp)
-
+        await session.delete(valid_otp)
     otp = OTP(
-        email=register_in.email,
+        email=str(register_in.email),
         code=code,
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_VALIDITY)
     )
-
     session.add(otp)
-
     mail_manager.send_mail(register_in.email, code)
-    
     await session.commit()
-
-    return EmailSchema(
-        email=register_in.email
-    )
+    return EmailSchema(email=register_in.email)
 
 
 async def verify(verify_in: VerifySchema, session: AsyncSession) -> TokenSchema:
@@ -122,7 +106,7 @@ async def login(login_in: LoginSchema, session: AsyncSession) -> TokenSchema:
             User.is_active==True
         )
     )
-    
+
     user = result.scalar_one_or_none()
 
     if not user:

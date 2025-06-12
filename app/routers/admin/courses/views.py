@@ -137,7 +137,7 @@ async def update_chapter(
     path="/{course_id}/chapters/{chapter_id}",
     summary="Delete chapter"
 )
-async def read_chapter(
+async def delete_chapter(
     course_id: Annotated[int, Path(gt=0)],
     chapter_id: Annotated[int, Path(gt=0)],
     # user: User = Depends(auth_manager.admin_auth),

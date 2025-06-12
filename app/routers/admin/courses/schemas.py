@@ -54,7 +54,7 @@ class CreateChapterSchema(BaseModel):
         return cls(title=title)
 
 
-class ChapterSchema(CreateCourseSchema):
+class ChapterSchema(BaseModel):
     id: int
     title: str
     video: str

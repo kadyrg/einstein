@@ -14,8 +14,7 @@ router = APIRouter(
 
 @router.post(
     path="/register",
-    name="Register to Einstein Platform",
-    description="Register to Einstein Platform as a Student",
+    summary="Register",
     response_model=EmailSchema
 )
 async def register(
@@ -27,8 +26,7 @@ async def register(
 
 @router.post(
     path="/verify",
-    name="Verify your email",
-    description="Verify your email to login",
+    summary="Verify",
     response_model=TokenSchema
 )
 async def verify(
@@ -40,8 +38,7 @@ async def verify(
 
 @router.post(
     path="/login",
-    name="Login to Einstein Platform",
-    description="Login to Einstein Platform as a student",
+    summary="Login",
     response_model=TokenSchema
 )
 async def login(

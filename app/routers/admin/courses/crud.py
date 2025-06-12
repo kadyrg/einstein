@@ -4,10 +4,9 @@ from fastapi import HTTPException, UploadFile, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import selectinload
 
-from .schemas import CourseSchema, CreateCourseSchema, course_schema, read_course_schema, CreateChapterSchema, \
-    chapter_schema, ChapterSchema, UpdateChapterSchema
+from .schemas import CourseSchema, CreateCourseSchema, course_schema, read_course_schema, CreateChapterSchema, chapter_schema, ChapterSchema, UpdateChapterSchema
 from app.models import Course, Chapter
-from app.utils import course_image_manager, courses_media_path_manager, chapter_video_manager
+from app.utils import course_image_manager, chapter_video_manager
 
 
 async def create_course(course_in: CreateCourseSchema, image: UploadFile, request: Request, session: AsyncSession) -> CourseSchema:

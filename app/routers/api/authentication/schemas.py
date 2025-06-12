@@ -1,30 +1,25 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator, Field
+
+from app.core.mixins import EmailMixin
 
 
-class EmailSchema(BaseModel):
-    email: EmailStr
+class EmailSchema(EmailMixin, BaseModel):
+    pass
 
 
-class RegisterSchema(EmailSchema):
-    first_name: str
-    last_name: str
-    password: str
-
-
-    @field_validator("password")
-    def validate_password(cls, v):
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
-        return v
+class RegisterSchema(EmailMixin, BaseModel):
+    first_name: str = Field(min_length=1, max_length=50)
+    last_name: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=8, max_length=16)
 
 
 class TokenSchema(BaseModel):
     token: str
 
 
-class VerifySchema(EmailSchema):
+class VerifySchema(EmailMixin, BaseModel):
     code: str
 
 
-class LoginSchema(EmailSchema):
+class LoginSchema(EmailMixin, BaseModel):
     password: str
