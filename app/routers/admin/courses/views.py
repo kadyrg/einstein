@@ -24,7 +24,7 @@ async def create_course(
     course_in: Annotated[CreateCourseSchema, Depends(CreateCourseSchema.as_form)],
     image: Annotated[UploadFile, File(...)],
     request: Request,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.create_course(course_in, image, request, session)
@@ -37,7 +37,7 @@ async def create_course(
 )
 async def get_courses(
     request: Request,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.get_courses(request, session)
@@ -51,7 +51,7 @@ async def get_courses(
 async def read_course(
     course_id: Annotated[int, Path(gt=0)],
     request: Request,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.read_course(course_id, request, session)
@@ -67,7 +67,7 @@ async def update_course(
     request: Request,
     image: Annotated[UploadFile | None, File()] = None,
     course_title: Annotated[str | None, Form(min_length=1, max_length=50)] = None,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency)
 ):
     return await crud.update_course(course_id, course_title, image, request, session)
@@ -79,7 +79,7 @@ async def update_course(
 )
 async def delete_course(
     course_id: Annotated[int, Path(gt=0)],
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.delete_course(course_id, session)
@@ -95,7 +95,7 @@ async def create_chapter(
     chapter_in: Annotated[CreateChapterSchema, Depends(CreateChapterSchema.as_form)],
     request: Request,
     video: Annotated[UploadFile, File(...)],
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.create_chapter(course_id, chapter_in, request, video, session)
@@ -110,7 +110,7 @@ async def read_chapter(
     course_id: Annotated[int, Path(gt=0)],
     chapter_id: Annotated[int, Path(gt=0)],
     request: Request,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.read_chapter(course_id, chapter_id, request, session)
@@ -127,7 +127,7 @@ async def update_chapter(
     chapter_in: Annotated[UpdateChapterSchema, Depends(UpdateChapterSchema.as_form)],
     request: Request,
     video: Annotated[UploadFile | None, File()] = None,
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.update_chapter(course_id, chapter_id, chapter_in, video, request, session)
@@ -140,7 +140,7 @@ async def update_chapter(
 async def read_chapter(
     course_id: Annotated[int, Path(gt=0)],
     chapter_id: Annotated[int, Path(gt=0)],
-    user: User = Depends(auth_manager.admin_auth),
+    # user: User = Depends(auth_manager.admin_auth),
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.delete_chapter(course_id, chapter_id, session)
