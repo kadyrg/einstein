@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request, UploadFile
 from sqlalchemy.orm import selectinload
 
 from .schemas import CourseSchema, course_schema, read_course_schema, chapter_schema, ChapterSchema, QuestionSchema
-from app.models import Course, Chapter, User
+from app.models import Course, Chapter
 from app.core.dependencies import ask_ai
 
 
