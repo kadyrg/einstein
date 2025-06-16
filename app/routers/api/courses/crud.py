@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, UploadFile
 from sqlalchemy.orm import selectinload
 
-from .schemas import CourseSchema, course_schema, read_course_schema, chapter_schema, ChapterSchema
-from app.models import Course, Chapter
+from .schemas import CourseSchema, course_schema, read_course_schema, chapter_schema, ChapterSchema, QuestionSchema
+from app.models import Course, Chapter, User
+from app.core.dependencies import ask_ai
 
 
 async def get_courses(request: Request, session: AsyncSession) -> list[CourseSchema]:
@@ -38,3 +39,25 @@ async def read_chapter(course_id: int, chapter_id: int, request: Request, sessio
     if chapter is None:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return chapter_schema(chapter, request)
+
+
+async def ask_question(course_id: int, chapter_id: int, image: UploadFile, question_in: QuestionSchema, session: AsyncSession):
+    result = await session.execute(
+        select(Chapter)
+        .options(selectinload(Chapter.course))
+        .where(
+            Chapter.id == chapter_id,
+            Chapter.course_id == course_id
+        )
+    )
+
+    chapter = result.scalar_one_or_none()
+
+    if chapter is None:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    course_name = chapter.course.title
+    chapter_name = chapter.title
+    question = question_in.question
+    image = image
+    return await ask_ai.ask_question(course_name, chapter_name, question, image)

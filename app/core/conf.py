@@ -40,6 +40,8 @@ class Settings(BaseSettings):
 
     MEDIA_ROOT: Path = BASE_DIR / "app/media"
 
+    AI_KEY: str
+
     @property
     def db_url(self) -> str:
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"

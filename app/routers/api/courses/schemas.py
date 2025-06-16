@@ -48,3 +48,14 @@ def read_course_schema(course: Course, chapters: list[Chapter], request: Request
         image=image,
         chapters=[chapter_schema(chapter, request) for chapter in chapters],
     )
+
+
+class QuestionSchema(BaseModel):
+    question: str
+
+    @classmethod
+    def as_form(
+            cls,
+            question: str = Form(...),
+    ):
+        return cls(question=question)

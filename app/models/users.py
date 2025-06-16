@@ -14,10 +14,12 @@ class UserType(str, Enum):
 class User(Base):
     __tablename__ = "users"
     
-    email: Mapped[str] = mapped_column(unique=True)
-    first_name: Mapped[str]
-    last_name: Mapped[str]
-    type: Mapped[UserType] = mapped_column(SqlEnum(UserType), default=UserType.student)
-    password: Mapped[str]
-    is_active: Mapped[bool] = mapped_column(default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+
+    first_name: Mapped[str] = mapped_column(nullable=False)
+    last_name: Mapped[str] = mapped_column(nullable=False)
+
+    type: Mapped[UserType] = mapped_column(SqlEnum(UserType), nullable=False, default=UserType.student)
+    password: Mapped[str] = mapped_column(nullable=False)
+    is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)

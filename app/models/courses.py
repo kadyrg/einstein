@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import DateTime
 from typing import TYPE_CHECKING
