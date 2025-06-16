@@ -40,18 +40,3 @@ async def read_course(
     session: AsyncSession = Depends(database.scoped_session_dependency),
 ):
     return await crud.read_course(course_id, request, session)
-
-
-@router.get(
-    path="/{course_id}/chapters/{chapter_id}",
-    summary="Get chapter",
-    response_model=ChapterSchema
-)
-async def read_chapter(
-    course_id: Annotated[int, Path(gt=0)],
-    chapter_id: Annotated[int, Path(gt=0)],
-    request: Request,
-    # user: User = Depends(auth_manager.student_auth),
-    session: AsyncSession = Depends(database.scoped_session_dependency),
-):
-    return await crud.read_chapter(course_id, chapter_id, request, session)

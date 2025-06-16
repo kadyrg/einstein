@@ -1,8 +1,9 @@
 from fastapi import Request
 from pydantic import BaseModel
 
-from app.utils import courses_media_path_manager, chapters_media_path_manager
+from app.utils import courses_media_path_manager
 from app.models import Course, Chapter
+from app.routers.api.chapters.schemas import ChapterSchema, chapter_schema
 
 
 class CourseSchema(BaseModel):
@@ -17,21 +18,6 @@ def course_schema(course: Course, request: Request) -> CourseSchema:
         id=course.id,
         title=course.title,
         image=image
-    )
-
-
-class ChapterSchema(BaseModel):
-    id: int
-    title: str
-    video: str
-
-def chapter_schema(chapter: Chapter, request: Request) -> ChapterSchema:
-    video = chapters_media_path_manager.file_path(request, chapter.video_path)
-
-    return ChapterSchema(
-        id=chapter.id,
-        title=chapter.title,
-        video=video
     )
 
 

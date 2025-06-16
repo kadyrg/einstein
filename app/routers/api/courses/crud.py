@@ -27,14 +27,3 @@ async def read_course(course_id: int, request: Request, session: AsyncSession) -
     return read_course_schema(course, course.chapters, request)
 
 
-async def read_chapter(course_id: int, chapter_id: int, request: Request, session: AsyncSession) -> ChapterSchema:
-    chapter_result = await session.execute(
-        select(Chapter).where(
-            Chapter.id == chapter_id,
-            Chapter.course_id == course_id,
-        )
-    )
-    chapter = chapter_result.scalar_one_or_none()
-    if chapter is None:
-        raise HTTPException(status_code=404, detail="Chapter not found")
-    return chapter_schema(chapter, request)
