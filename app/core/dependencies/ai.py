@@ -40,7 +40,7 @@ class AskAI:
                 content = chunk.choices[0].delta.content
                 if content:
                     print(content, end="", flush=True)
-                    yield content
+                    yield (content + "\n").encode()
         return StreamingResponse(event_generator(), media_type="text/plain")
 
 ask_ai = AskAI(settings.AI_KEY)
